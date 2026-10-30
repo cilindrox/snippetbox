@@ -38,6 +38,11 @@ func main() {
 	var handler slog.Handler
 	if cfg.env == "production" {
 		handler = slog.NewJSONHandler(os.Stdout, nil)
+	} else if cfg.env == "debug" {
+		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		})
 	} else {
 		handler = slog.NewTextHandler(os.Stdout, nil)
 	}
