@@ -1,24 +1,37 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
-	"net"
 	"net/http"
 )
 
-func main() {
-	portNum, err := net.LookupPort("tcp", "http-alt")
-	if err != nil {
-		log.Fatalf("could not resolve service name: %v", err)
-	}
+type config struct {
+	addr      string
+	staticDir string
+}
 
-	addr := fmt.Sprintf(":%d", portNum)
+var cfg config
+
+func init() {
+	const (
+		defaultAddr      = ":8080"
+		addrUsage        = "HTTP network address"
+		defaultStaticDir = "./assets/static/"
+	)
+
+	flag.StringVar(&cfg.addr, "addr", defaultAddr, addrUsage)
+	flag.StringVar(&cfg.addr, "a", defaultAddr, addrUsage+" (shorthand)")
+
+	flag.StringVar(&cfg.staticDir, "static-dir", defaultStaticDir, "Path to static assets")
+}
+
+func main() {
+	flag.Parse()
 
 	mux := http.NewServeMux()
 
-	fileServer := http.FileServer(http.Dir("./assets/static/"))
-
+	fileServer := http.FileServer(http.Dir(cfg.staticDir))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
 	mux.HandleFunc("GET /{$}", home)
@@ -26,8 +39,8 @@ func main() {
 	mux.HandleFunc("GET /snippet/create", snippetCreate)
 	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
 
-	log.Printf("starting server on %s", addr)
+	log.Printf("starting server on %s", cfg.addr)
 
-	err = http.ListenAndServe(addr, mux)
+	err := http.ListenAndServe(cfg.addr, mux)
 	log.Fatal(err)
 }
