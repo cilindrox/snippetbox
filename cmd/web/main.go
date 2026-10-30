@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+const (
+	defaultAddr        = ":8080"
+	addrUsage          = "HTTP network address"
+	defaultStaticDir   = "./assets/static/"
+	defaultEnvironment = "dev"
+)
+
 type config struct {
 	addr      string
 	env       string
@@ -14,19 +21,12 @@ type config struct {
 }
 
 type application struct {
+	config config
 	logger *slog.Logger
 }
 
-var cfg config
-
-func init() {
-	const (
-		defaultAddr        = ":8080"
-		addrUsage          = "HTTP network address"
-		defaultStaticDir   = "./assets/static/"
-		defaultEnvironment = "dev"
-	)
-
+func main() {
+	var cfg config
 	flag.StringVar(&cfg.addr, "addr", defaultAddr, addrUsage)
 	flag.StringVar(&cfg.addr, "a", defaultAddr, addrUsage+" (shorthand)")
 
@@ -34,9 +34,7 @@ func init() {
 
 	flag.StringVar(&cfg.env, "environment", defaultEnvironment, "Application environment")
 	flag.StringVar(&cfg.env, "env", defaultEnvironment, "Application environment (shorthand)")
-}
 
-func main() {
 	flag.Parse()
 
 	var handler slog.Handler
@@ -56,21 +54,12 @@ func main() {
 
 	app := &application{
 		logger: logger,
+		config: cfg,
 	}
-
-	mux := http.NewServeMux()
-
-	fileServer := http.FileServer(http.Dir(cfg.staticDir))
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("GET /{$}", app.home)
-	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
-	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
-	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
 	logger.Info("starting server", "addr", cfg.addr)
 
-	err := http.ListenAndServe(cfg.addr, mux)
+	err := http.ListenAndServe(cfg.addr, app.routes())
 	logger.Error(err.Error())
 	os.Exit(1)
 }
