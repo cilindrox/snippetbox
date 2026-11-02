@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/cilindrox/snippetbox/internal/models"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -25,8 +26,9 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *slog.Logger
+	config   config
+	logger   *slog.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -67,8 +69,9 @@ func main() {
 	defer db.Close()
 
 	app := &application{
-		logger: logger,
-		config: cfg,
+		config:   cfg,
+		logger:   logger,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	logger.Info("starting server", "addr", cfg.addr)
