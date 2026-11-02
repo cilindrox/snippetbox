@@ -30,3 +30,7 @@
 !/assets/static/img/logo.png
 !/assets/static/index.html
 !/assets/static/js/main.js
+
+# Dev
+!compose.yml
+!scripts/init.sql
