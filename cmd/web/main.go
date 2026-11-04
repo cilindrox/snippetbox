@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"text/template"
 
 	"github.com/cilindrox/snippetbox/internal/models"
 	_ "github.com/go-sql-driver/mysql"
@@ -26,9 +27,10 @@ type config struct {
 }
 
 type application struct {
-	config   config
-	logger   *slog.Logger
-	snippets *models.SnippetModel
+	config        config
+	logger        *slog.Logger
+	snippets      *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -65,13 +67,19 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-
 	defer db.Close()
 
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &application{
-		config:   cfg,
-		logger:   logger,
-		snippets: &models.SnippetModel{DB: db},
+		config:        cfg,
+		logger:        logger,
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	logger.Info("starting server", "addr", cfg.addr)
