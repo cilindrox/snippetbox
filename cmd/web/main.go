@@ -99,9 +99,20 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	logger.Info("starting server", "addr", cfg.addr)
+	srv := &http.Server{
+		Addr:                cfg.addr,
+		Handler:             app.routes(),
+		ErrorLog:            slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		MaxHeaderBytes:      524288, // 0.5Mi
+		MaxHeaderValueCount: 100,    // return 413 past this threshold
+		IdleTimeout:         time.Minute,
+		ReadTimeout:         5 * time.Second,
+		WriteTimeout:        10 * time.Second,
+	}
 
-	err = http.ListenAndServe(cfg.addr, app.routes())
+	logger.Info("starting server", "addr", srv.Addr)
+
+	err = srv.ListenAndServe()
 	logger.Error(err.Error())
 	os.Exit(1)
 }
